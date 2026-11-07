@@ -1,0 +1,21 @@
+(lang dune 3.16)
+
+(name nba_sim)
+
+(generate_opam_files true)
+
+(package
+ (name nba_sim)
+ (synopsis "NBA simulation backend")
+ (depends
+  (ocaml (>= 5.1))
+  dune
+  dream
+  lwt
+  uri
+  yojson
+  caqti
+  caqti-lwt
+  caqti-driver-sqlite3
+  ppx_rapper
+  ppx_rapper_lwt))
