@@ -1,0 +1,33 @@
+{
+  "name": "nba-sim",
+  "build": { "dockerfile": "Dockerfile" },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "22" },
+    "ghcr.io/devcontainers/features/terraform:1": { "version": "latest", "tflint": "latest" },
+    "ghcr.io/devcontainers/features/aws-cli:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "forwardPorts": [5173, 8080, 5555],
+  "portsAttributes": {
+    "5173": { "label": "frontend" },
+    "8080": { "label": "backend" },
+    "5555": { "label": "prisma studio" }
+  },
+  "mounts": [
+    "source=nba-sim-node-modules,target=${containerWorkspaceFolder}/frontend/node_modules,type=volume",
+    "source=nba-sim-db-node-modules,target=${containerWorkspaceFolder}/db/node_modules,type=volume"
+  ],
+  "postCreateCommand": "sudo chown vscode frontend/node_modules db/node_modules && make install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ocamllabs.ocaml-platform",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "hashicorp.terraform"
+      ]
+    }
+  },
+  "remoteUser": "vscode"
+}
