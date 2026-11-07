@@ -5,12 +5,15 @@ let env_int name ~default =
   | Some v -> ( try int_of_string v with Failure _ -> default)
   | None -> default
 
-(* The SQLite file. Prisma (db/) creates and migrates it; the Makefile and the
-   EC2 both set DB_PATH. *)
-let db_path =
-  match Sys.getenv_opt "DB_PATH" with
-  | Some p when p <> "" -> p
-  | _ -> failwith "DB_PATH must be set to the SQLite file"
+let required name =
+  match Sys.getenv_opt name with
+  | Some v when v <> "" -> v
+  | _ -> failwith (name ^ " must be set")
+
+(* The SQLite file, and Prisma's migrations (prisma/migrations), which the
+   backend applies at start. The Makefile and the EC2 set both. *)
+let db_path = required "DB_PATH"
+let migrations_dir = required "MIGRATIONS_DIR"
 
 let db_uri = "sqlite3:" ^ db_path
 
@@ -26,23 +29,18 @@ module Q = struct
 
   (* A consistent copy of the whole database, taken while the app runs. *)
   let vacuum_into = [%rapper execute {sql| VACUUM INTO %string{path} |sql}]
-
-  let enable_wal =
-    Caqti_request.Infix.(Caqti_type.unit ->! Caqti_type.string)
-      "PRAGMA journal_mode=WAL"
 end
 
-(* WAL lets reads run during a write. It is stored in the file, so once at
-   startup is enough. *)
-let enable_wal () =
-  Lwt_main.run
-    (let* r =
-       Caqti_lwt_unix.with_connection (Uri.of_string db_uri)
-         (fun (module Db : Caqti_lwt.CONNECTION) -> Db.find Q.enable_wal ())
-     in
-     let* mode = or_fail r in
-     Dream.log "SQLite %s, journal_mode=%s" db_path mode;
-     Lwt.return_unit)
+let migrate () =
+  match Migrate.run ~db_path ~migrations_dir with
+  | [] ->
+      Dream.log "SQLite %s is up to date at %s" db_path
+        (Migrate.head ~migrations_dir)
+  | applied ->
+      List.iter (Dream.log "Applied the migration %s") applied
+  | exception Migrate.Error msg ->
+      prerr_endline ("Cannot migrate the database: " ^ msg);
+      exit 1
 
 let timestamp () =
   let t = Unix.gmtime (Unix.time ()) in
@@ -94,7 +92,7 @@ let static_routes =
   | None -> []
 
 let () =
-  enable_wal ();
+  migrate ();
   Dream.run ~interface:"0.0.0.0" ~port:(env_int "PORT" ~default:8080)
   @@ Dream.logger
   (* One connection: SQLite has a single writer, and the load is small. *)
