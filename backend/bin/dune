@@ -1,0 +1,19 @@
+(executable
+ (name main)
+ (public_name nba-sim)
+ (package nba_sim)
+ (preprocess
+  (pps ppx_rapper))
+ (libraries
+  sim
+  dream
+  lwt
+  lwt.unix
+  uri
+  yojson
+  unix
+  caqti
+  caqti-lwt
+  caqti-lwt.unix
+  caqti-driver-sqlite3
+  ppx_rapper_lwt))
