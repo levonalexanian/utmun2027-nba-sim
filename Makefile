@@ -8,10 +8,11 @@ TF := terraform -chdir=infra/terraform
 # The tf-* targets read the deploy settings from infra/terraform/.env.local.
 TF_ENV := source infra/terraform/.env.local &&
 OPAM := opam exec --
-PRISMA := npm --prefix db exec -- prisma
+PRISMA := npm --prefix prisma exec -- prisma
 
 # One SQLite file, shared by Prisma (migrations) and the backend (queries).
-export DB_PATH ?= $(CURDIR)/db/dev.db
+export DB_PATH ?= $(CURDIR)/prisma/dev.db
+export MIGRATIONS_DIR := $(CURDIR)/prisma/migrations
 export DATABASE_URL := file:$(DB_PATH)
 # Dev-only token for /api/admin/dump; production sets its own.
 export ADMIN_TOKEN ?= dev
@@ -19,7 +20,7 @@ export ADMIN_TOKEN ?= dev
 APP_URL ?= http://localhost:8080
 
 .DEFAULT_GOAL := help
-.PHONY: help install dev dev-frontend dev-backend build check fmt clean db-migrate db-new db-reset db-studio db-dump tf-init tf-plan tf-apply tf-output
+.PHONY: help install dev dev-frontend dev-backend build check fmt clean db-migrate db-status db-new db-reset db-studio db-dump tf-init tf-plan tf-apply tf-output
 
 help:
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
@@ -27,7 +28,7 @@ help:
 ##@ Setup
 install: ## Install the frontend and backend dependencies
 	npm --prefix frontend ci
-	npm --prefix db ci
+	npm --prefix prisma ci
 	$(OPAM) opam install ./backend --deps-only -y
 	$(TF) init -backend=false -lockfile=readonly
 	cd infra/terraform && tflint --init
@@ -39,7 +40,7 @@ dev: ## Run the backend and the frontend, until Ctrl-C
 dev-frontend: ## Run the Vite dev server on :5173 (proxies /api to :8080)
 	npm --prefix frontend run dev
 
-dev-backend: db-migrate ## Run the backend on :8080, rebuilding on change
+dev-backend: ## Run the backend on :8080 (applies the migrations at start), rebuilding on change
 	cd backend && $(OPAM) dune exec --watch ./bin/main.exe
 
 ##@ Build and check
@@ -62,9 +63,12 @@ fmt: ## Format the backend and the Terraform
 clean: ## Remove build outputs
 	rm -rf frontend/dist backend/_build
 
-##@ Database (SQLite at $DB_PATH, default db/dev.db)
-db-migrate: ## Apply the pending migrations (creates the database if needed)
+##@ Database (SQLite at $DB_PATH, default prisma/dev.db)
+db-migrate: ## Apply the pending migrations with Prisma (the backend also does at start)
 	$(PRISMA) migrate deploy
+
+db-status: ## List the migrations that the database has and lacks
+	$(PRISMA) migrate status
 
 db-new: ## Make a migration from schema.prisma changes: make db-new NAME=add_players
 	$(PRISMA) migrate dev --name $(NAME)

@@ -7,8 +7,8 @@ The NBA Simulation for the UTMUN 2027 NBA Committee. It handles the simulation l
 | Folder | What it is |
 |---|---|
 | `frontend/` | The web app: React, TypeScript, Tailwind (Vite). |
-| `backend/` | The OCaml server (Dream). `lib/sim.ml` holds the simulation logic. |
-| `db/` | The SQLite schema and migrations (Prisma). |
+| `backend/` | The OCaml server (Dream). `lib/sim.ml` holds the simulation logic; `migrate/` applies the database migrations. |
+| `prisma/` | The SQLite schema and migrations (Prisma). The backend applies them at start. |
 | `infra/terraform/` | AWS: one small EC2, and an S3 bucket of database snapshots. |
 
 ## Getting started

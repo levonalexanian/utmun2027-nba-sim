@@ -1,0 +1,10 @@
+{
+  "name": "@nba-sim/prisma",
+  "private": true,
+  "version": "0.0.0",
+  "description": "The Prisma CLI, which writes and checks the migrations of the database. No Prisma client: the OCaml backend reads and writes the database.",
+  "type": "module",
+  "devDependencies": {
+    "prisma": "7.10.1"
+  }
+}

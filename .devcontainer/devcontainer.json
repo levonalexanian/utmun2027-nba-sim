@@ -15,9 +15,9 @@
   },
   "mounts": [
     "source=nba-sim-node-modules,target=${containerWorkspaceFolder}/frontend/node_modules,type=volume",
-    "source=nba-sim-db-node-modules,target=${containerWorkspaceFolder}/db/node_modules,type=volume"
+    "source=nba-sim-prisma-node-modules,target=${containerWorkspaceFolder}/prisma/node_modules,type=volume"
   ],
-  "postCreateCommand": "sudo chown vscode frontend/node_modules db/node_modules && make install",
+  "postCreateCommand": "sudo chown vscode frontend/node_modules prisma/node_modules && make install",
   "customizations": {
     "vscode": {
       "extensions": [
