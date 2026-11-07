@@ -1,0 +1,42 @@
+#!/bin/bash
+# First boot only (Terraform ignores later changes): Docker for the app, and a
+# systemd timer that uploads a SQLite snapshot to S3.
+set -euxo pipefail
+dnf install -y docker sqlite
+systemctl enable --now docker
+usermod -aG docker ec2-user
+
+# The app's SQLite file lives here; the container mounts /data.
+mkdir -p /data
+
+cat > /usr/local/bin/nba-backup <<'SCRIPT'
+#!/bin/bash
+set -euo pipefail
+[ -f /data/nba.db ] || exit 0
+name="nba-sim-$(date -u +%Y%m%dT%H%M%SZ).db"
+sqlite3 /data/nba.db ".backup /tmp/$name"
+aws s3 cp --only-show-errors "/tmp/$name" "s3://${backup_bucket}/snapshots/$name"
+rm -f "/tmp/$name"
+SCRIPT
+chmod +x /usr/local/bin/nba-backup
+
+cat > /etc/systemd/system/nba-backup.service <<'UNIT'
+[Unit]
+Description=Upload a SQLite snapshot to S3
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/nba-backup
+UNIT
+
+cat > /etc/systemd/system/nba-backup.timer <<'UNIT'
+[Unit]
+Description=SQLite snapshot every ${backup_interval_minutes} minutes
+[Timer]
+OnCalendar=*:0/${backup_interval_minutes}
+Persistent=true
+[Install]
+WantedBy=timers.target
+UNIT
+
+systemctl daemon-reload
+systemctl enable --now nba-backup.timer
