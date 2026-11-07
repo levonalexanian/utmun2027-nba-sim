@@ -1,0 +1,14 @@
+// Prisma owns the schema and the migrations. The OCaml backend queries the
+// tables directly with Caqti / ppx_rapper, so no Prisma Client is generated.
+// Table and column names are the model and field names, e.g. "Team"."wins".
+
+datasource db {
+  provider = "sqlite"
+}
+
+// Example model: replace it with the real sim schema.
+model Team {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+  wins Int    @default(0)
+}

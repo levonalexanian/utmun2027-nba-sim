@@ -1,0 +1,9 @@
+{
+  "name": "nba-sim-db",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "devDependencies": {
+    "prisma": "7.10.1"
+  }
+}
