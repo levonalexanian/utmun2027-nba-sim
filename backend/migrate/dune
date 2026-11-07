@@ -1,0 +1,3 @@
+(library
+ (name migrate)
+ (libraries sqlite3 digestif unix))
