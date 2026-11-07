@@ -1,0 +1,25 @@
+# Frontend
+node_modules/
+dist/
+
+# Backend
+_build/
+*.install
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+.env.local
+
+# OS / editors
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+
+# SQLite
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
